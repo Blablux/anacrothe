@@ -1,0 +1,24 @@
+#! /bin/sed -f
+
+# smart quotes
+s/^\"/«/g
+s/ \"/«/g
+s/\"/»/g
+s/'/’/g
+
+# ellipses
+s/\.\{3\}/…/g
+
+# emdash et endash
+s/--/—/g
+s/\([0-9]\)-\([0-9]\)/\1–\2/g
+
+# espaces insécables (fr)
+# ponctuations hautes
+s/ \([!?:;]\)/\&nbsp;\1/g
+
+# unités de mesure
+s/\([0-9]\) \([a-z]\)/\1\&nbsp;\2/g
+# parce que je suis mauvais
+s/\([0-9]\)\([a-z]\)/\1\&nbsp;\2/g
+

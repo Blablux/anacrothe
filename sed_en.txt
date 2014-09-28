@@ -1,0 +1,23 @@
+#! /bin/sed -f
+
+# smart quotes
+s/^\"/“/g
+s/ \"/“/g
+s/\"/”/g
+s/'/’/g
+
+# ellipses
+s/\.\{3\}/…/g
+
+# emdash and endash
+s/-\{2,2\}/—/g
+s/\([0-9]\)-\([0-9]\)/\1–\2/g
+
+# line break MD
+
+# whitespace
+# units measures
+s/\([0-9]\) \([a-z]\)/\1\&nbsp;\2/g
+# because i'm a retard
+s/\([0-9]\)\([a-z]\)/\1\&nbsp;\2/g
+
