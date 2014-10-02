@@ -127,4 +127,26 @@ mkdir $filepath/Text
 csplit -sz -f "$filepath/Text/part" $workingname.html '/^<h1>/' {*}
 rm $workingname.html
 
+# wrapping chapters
+
+chnb="1"
+cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$filepath/Text/header.txt"
+for i in "$filepath"/Text/part*
+do
+ if [ $chnb -lt 10 ]
+ then
+  prefix="0"
+ else
+  prefix=""
+ fi
+ cat "$filepath/Text/header.txt" > "$filepath/Text/chap$prefix$chnb.xhtml"
+# echo "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>$title</title><link href=\"../Styles/stylesheet.css\" type=\"text/css\" rel=\"stylesheet\" /></head><body>" > "$filepath/Text/chap$prefix$chnb.xhtml"
+ cat $i >> "$filepath/Text/chap$prefix$chnb.xhtml"
+ echo "</body></html>" >> "$filepath/Text/chap$prefix$chnb.xhtml"
+ chnb=$(( chnb + 1 ))
+done
+
+rm "$filepath"/Text/part*
+
+# writing title page
 
