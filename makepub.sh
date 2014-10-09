@@ -11,14 +11,7 @@
 function senderror()
 {
   echo "$1" ;
-  if [ -r $workingname.tmp ] ;
-  then
-    rm $workingname.tmp
-  fi
-  if [ -r $filepath/$filename.html ] ;
-  then
-    rm $filepath/$filename.html
-  fi
+  rm -r ./temp ;
   exit 1 ;
 }
 
