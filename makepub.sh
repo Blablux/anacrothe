@@ -11,7 +11,7 @@
 function senderror()
 {
   echo "$1" ;
-  rm -r ./temp ;
+  rm -r "$scriptpath"/temp ;
   exit 1 ;
 }
 
@@ -31,7 +31,7 @@ then
 else
   senderror "You must supply the file to convert"
 fi
-mkdir ./temp
+mkdir "$scriptpath"/temp
 
 # check if file is text and markdown
 if ! file --mime-type "$1" | grep -q text/plain$; then
@@ -62,7 +62,7 @@ echo -n "Choose language [en/fr]: " ; read lang
 case $lang in
   en|fr)
    sed -f lang/sed_$lang.txt $1 > $workingname.tmp
-   sed -f lang/sed_$lang.txt $filepath/description.$ext > ./temp/description.tmp
+   sed -f lang/sed_$lang.txt $filepath/description.$ext > "$scriptpath"/temp/description.tmp
    ;;
   *) senderror "Unsupported language" ;;
 esac
@@ -73,9 +73,9 @@ sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' $workingname.tmp
 
 # convert text to html
 recode -dt u8..html $workingname.tmp
-recode -dt u8..html ./temp/description.tmp
+recode -dt u8..html "$scriptpath"/temp/description.tmp
 perl $scriptpath/markdown.pl --html4tags $workingname.tmp > $workingname.html
-perl $scriptpath/markdown.pl --html4tags ./temp/description.tmp > ./description.html
+perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/description.tmp > "$scriptpath"/temp/description.html
 
 # replace <hr> with a html entity
 echo "Do you want to replace horizontal rules with" ;
@@ -143,4 +143,8 @@ done
 rm "$filepath"/Text/part*
 
 # writing title page
+
+ cat "$filepath/Text/header.txt" > "$filepath/Text/title_page.xhtml"
+ cat "$scriptpath/temp/description.html" >> "$filepath/Text/title_page.xhtml"
+ echo "</body></html>" >> "$filepath/Text/title_page.xhtml"
 
