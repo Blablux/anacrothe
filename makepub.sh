@@ -21,8 +21,8 @@ function senderror()
   fi
   exit 1 ;
 }
-scriptpath=`dirname $0`
 
+scriptpath=`dirname $0`
 # check if file exist
 if [ ! -z $1 ] ;
 then
@@ -30,14 +30,15 @@ then
   filename=$(basename "$1")
   ext="${filename##*.}"
   filename="${filename%.*}"
-  workingname=$filepath/$filename
+  workingname="$scriptpath"/temp/"$filename"
   if [ ! -r $filepath/$filename.$ext ] ;
   then
-    senderror "$workingname.$ext can't be read!"
+    senderror "$filename.$ext can't be read!"
   fi
 else
   senderror "You must supply the file to convert"
 fi
+mkdir ./temp
 
 # check if file is text and markdown
 if ! file --mime-type "$1" | grep -q text/plain$; then
@@ -61,26 +62,27 @@ echo "Please provide the metadata"
 echo -n "Author: " ; read author
 echo -n "Title: " ; read title
 echo -n "Publisher: " ; read publisher
-echo "Description will be taken from data/description.txt"
+echo "Description will be taken from $filepath/description.$ext"
 
 # apply language rules
 echo -n "Choose language [en/fr]: " ; read lang
 case $lang in
-  en|fr) sed -f sed_$lang.txt $1 > $workingname.tmp ;;
-  *) senderror "Unsupported language"
+  en|fr)
+   sed -f lang/sed_$lang.txt $1 > $workingname.tmp
+   sed -f lang/sed_$lang.txt $filepath/description.$ext > ./temp/description.tmp
+   ;;
+  *) senderror "Unsupported language" ;;
 esac
 
 # force line break when you forget them
 sed -i ':a;N;$!ba;s/\n/  \n/g' $workingname.tmp
 sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' $workingname.tmp
 
-# encode html chars, except for html special chars
+# convert text to html
 recode -dt u8..html $workingname.tmp
-
-# markdown conversion
-# cat $scriptpath/data/header.txt > $filepath/$filename.html
+recode -dt u8..html ./temp/description.tmp
 perl $scriptpath/markdown.pl --html4tags $workingname.tmp > $workingname.html
-# echo "</body>" >> $filepath/$filename.html
+perl $scriptpath/markdown.pl --html4tags ./temp/description.tmp > ./description.html
 
 # replace <hr> with a html entity
 echo "Do you want to replace horizontal rules with" ;
@@ -140,7 +142,6 @@ do
   prefix=""
  fi
  cat "$filepath/Text/header.txt" > "$filepath/Text/chap$prefix$chnb.xhtml"
-# echo "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>$title</title><link href=\"../Styles/stylesheet.css\" type=\"text/css\" rel=\"stylesheet\" /></head><body>" > "$filepath/Text/chap$prefix$chnb.xhtml"
  cat $i >> "$filepath/Text/chap$prefix$chnb.xhtml"
  echo "</body></html>" >> "$filepath/Text/chap$prefix$chnb.xhtml"
  chnb=$(( chnb + 1 ))
