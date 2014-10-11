@@ -56,13 +56,26 @@ echo -n "Author: " ; read author
 echo -n "Title: " ; read title
 echo -n "Publisher: " ; read publisher
 echo "Description will be taken from $filepath/description.$ext"
+echo "Contact informations will be taken from $filepath/contact.$ext"
+echo "Serie informations will be taken from $filepath/serie.$ext"
 
 # apply language rules
 echo -n "Choose language [en/fr]: " ; read lang
 case $lang in
   en|fr)
    sed -f lang/sed_$lang.txt $1 > $workingname.tmp
-   sed -f lang/sed_$lang.txt $filepath/description.$ext > "$scriptpath"/temp/description.tmp
+   if [ ! -r $filepath/description.$ext ] ;
+   then
+    sed -f lang/sed_$lang.txt $filepath/description.$ext > "$scriptpath"/temp/description.tmp
+   fi
+   if [ ! -r $filepath/contact.$ext ] ;
+   then
+    sed -f lang/sed_$lang.txt $filepath/contact.$ext > "$scriptpath"/temp/contact.tmp
+   fi
+   if [ ! -r $filepath/serie.$ext ] ;
+   then
+    sed -f lang/sed_$lang.txt $filepath/serie.$ext > "$scriptpath"/temp/serie.tmp
+   fi
    ;;
   *) senderror "Unsupported language" ;;
 esac
@@ -73,9 +86,25 @@ sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' $workingname.tmp
 
 # convert text to html
 recode -dt u8..html $workingname.tmp
-recode -dt u8..html "$scriptpath"/temp/description.tmp
 perl $scriptpath/markdown.pl --html4tags $workingname.tmp > $workingname.html
-perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/description.tmp > "$scriptpath"/temp/description.html
+
+if [ ! -r $filepath/description.$ext ] ;
+then
+ recode -dt u8..html "$scriptpath"/temp/description.tmp
+ perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/description.tmp > "$scriptpath"/temp/description.html
+fi
+
+if [ ! -r $filepath/contact.$ext ] ;
+then
+ recode -dt u8..html "$scriptpath"/temp/contact.tmp
+ perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/contact.tmp > "$scriptpath"/temp/contact.html
+fi
+
+if [ ! -r $filepath/serie.$ext ] ;
+then
+ recode -dt u8..html "$scriptpath"/temp/serie.tmp
+ perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/serie.tmp > "$scriptpath"/temp/serie.html
+fi
 
 # replace <hr> with a html entity
 echo "Do you want to replace horizontal rules with" ;
@@ -143,8 +172,27 @@ done
 rm "$filepath"/Text/part*
 
 # writing title page
-
+if [ ! -r $filepath/description.$ext ] ;
+then
  cat "$filepath/Text/header.txt" > "$filepath/Text/title_page.xhtml"
  cat "$scriptpath/temp/description.html" >> "$filepath/Text/title_page.xhtml"
  echo "</body></html>" >> "$filepath/Text/title_page.xhtml"
+fi
+
+# writing contact page
+if [ ! -r $filepath/description.$ext ] ;
+then
+ cat "$filepath/Text/header.txt" > "$filepath/Text/contact.xhtml"
+ cat "$scriptpath/temp/description.html" >> "$filepath/Text/contact.xhtml"
+ echo "</body></html>" >> "$filepath/Text/contact.xhtml"
+fi
+
+# writing serie page
+if [ ! -r $filepath/description.$ext ] ;
+then
+ cat "$filepath/Text/header.txt" > "$filepath/Text/serie.xhtml"
+ cat "$scriptpath/temp/description.html" >> "$filepath/Text/serie.xhtml"
+ echo "</body></html>" >> "$filepath/Text/serie.xhtml"
+fi
+
 
