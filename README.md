@@ -29,7 +29,7 @@ Files
     + _description_ file will be used to create a title page.
     + _contact_ file will be used to create contact/author bio.
     + _serie_ file will be used to create serie information page.
-+ The main file is splitted at each `<h1>`, so your titles structure should take that into account (though this might be easily customizable in the script.
++ The main file is splitted at each `<h1>`, so your titles structure should take that into account (though this might be easily customisable in the script).
 
 Shortcomings
 ============
