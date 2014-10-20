@@ -10,9 +10,18 @@
 
 function senderror()
 {
-  echo "$1" ;
-  rm -r "$scriptpath"/temp ;
-  exit 1 ;
+ echo "$1" ;
+ rm -r "$scriptpath"/temp ;
+ exit 1 ;
+}
+
+function convertpage()
+{
+ sed -f "lang/sed_$lang.txt" "$filepath/$1.$ext" > "$scriptpath/temp/$1.tmp"
+ sed -i ':a;N;$!ba;s/\n/  \n/g' "$scriptpath/temp/$1.tmp"
+ sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' "$scriptpath/temp/$1.tmp"
+ recode -dt u8..html "$scriptpath/temp/$1.tmp"
+ perl "$scriptpath/markdown.pl" --html4tags "$scriptpath/temp/$1.tmp" > "$scriptpath/temp/$1.html"
 }
 
 scriptpath=`dirname $0`
@@ -32,6 +41,7 @@ else
   senderror "You must supply the file to convert"
 fi
 mkdir "$scriptpath"/temp
+cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
 
 # check if file is text and markdown
 if ! file --mime-type "$1" | grep -q text/plain$; then
@@ -59,51 +69,30 @@ echo "Description will be taken from $filepath/description.$ext"
 echo "Contact informations will be taken from $filepath/contact.$ext"
 echo "Serie informations will be taken from $filepath/serie.$ext"
 
-# apply language rules
+# set language rules
 echo -n "Choose language [en/fr]: " ; read lang
-case $lang in
-  en|fr)
-   sed -f lang/sed_$lang.txt $1 > $workingname.tmp
-   if [ ! -r $filepath/description.$ext ] ;
-   then
-    sed -f lang/sed_$lang.txt $filepath/description.$ext > "$scriptpath"/temp/description.tmp
-   fi
-   if [ ! -r $filepath/contact.$ext ] ;
-   then
-    sed -f lang/sed_$lang.txt $filepath/contact.$ext > "$scriptpath"/temp/contact.tmp
-   fi
-   if [ ! -r $filepath/serie.$ext ] ;
-   then
-    sed -f lang/sed_$lang.txt $filepath/serie.$ext > "$scriptpath"/temp/serie.tmp
-   fi
-   ;;
-  *) senderror "Unsupported language" ;;
-esac
-
-# force line break when you forget them
-sed -i ':a;N;$!ba;s/\n/  \n/g' $workingname.tmp
-sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' $workingname.tmp
+if [ ! -r "$scriptpath/lang/sed_$lang.txt" ] ;
+then
+ senderror "Unsupported language"
+fi
 
 # convert text to html
-recode -dt u8..html $workingname.tmp
-perl $scriptpath/markdown.pl --html4tags $workingname.tmp > $workingname.html
 
-if [ ! -r $filepath/description.$ext ] ;
+convertpage $filename
+
+if [ -r $filepath/description.$ext ] ;
 then
- recode -dt u8..html "$scriptpath"/temp/description.tmp
- perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/description.tmp > "$scriptpath"/temp/description.html
+ convertpage description
 fi
 
-if [ ! -r $filepath/contact.$ext ] ;
+if [ -r $filepath/contact.$ext ] ;
 then
- recode -dt u8..html "$scriptpath"/temp/contact.tmp
- perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/contact.tmp > "$scriptpath"/temp/contact.html
+ convertpage contact
 fi
 
-if [ ! -r $filepath/serie.$ext ] ;
+if [ -r $filepath/serie.$ext ] ;
 then
- recode -dt u8..html "$scriptpath"/temp/serie.tmp
- perl $scriptpath/markdown.pl --html4tags "$scriptpath"/temp/serie.tmp > "$scriptpath"/temp/serie.html
+ convertpage serie
 fi
 
 # replace <hr> with a html entity
@@ -146,15 +135,12 @@ then
 fi
 
 # spliting chapters
-rm $workingname.tmp
 mkdir $filepath/Text
 csplit -sz -f "$filepath/Text/part" $workingname.html '/^<h1>/' {*}
-rm $workingname.html
 
 # wrapping chapters
 
 chnb="1"
-cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$filepath/Text/header.txt"
 for i in "$filepath"/Text/part*
 do
  if [ $chnb -lt 10 ]
@@ -163,7 +149,7 @@ do
  else
   prefix=""
  fi
- cat "$filepath/Text/header.txt" > "$filepath/Text/chap$prefix$chnb.xhtml"
+ cat "$scriptpath/temp/header.txt" > "$filepath/Text/chap$prefix$chnb.xhtml"
  cat $i >> "$filepath/Text/chap$prefix$chnb.xhtml"
  echo "</body></html>" >> "$filepath/Text/chap$prefix$chnb.xhtml"
  chnb=$(( chnb + 1 ))
@@ -172,26 +158,26 @@ done
 rm "$filepath"/Text/part*
 
 # writing title page
-if [ ! -r $filepath/description.$ext ] ;
+if [ -r $filepath/description.$ext ] ;
 then
- cat "$filepath/Text/header.txt" > "$filepath/Text/title_page.xhtml"
+ cat "$scriptpath/temp/header.txt" > "$filepath/Text/title_page.xhtml"
  cat "$scriptpath/temp/description.html" >> "$filepath/Text/title_page.xhtml"
  echo "</body></html>" >> "$filepath/Text/title_page.xhtml"
 fi
 
 # writing contact page
-if [ ! -r $filepath/description.$ext ] ;
+if [ -r $filepath/description.$ext ] ;
 then
- cat "$filepath/Text/header.txt" > "$filepath/Text/contact.xhtml"
- cat "$scriptpath/temp/description.html" >> "$filepath/Text/contact.xhtml"
+ cat "$scriptpath/temp/header.txt" > "$filepath/Text/contact.xhtml"
+ cat "$scriptpath/temp/contact.html" >> "$filepath/Text/contact.xhtml"
  echo "</body></html>" >> "$filepath/Text/contact.xhtml"
 fi
 
 # writing serie page
-if [ ! -r $filepath/description.$ext ] ;
+if [ -r $filepath/description.$ext ] ;
 then
- cat "$filepath/Text/header.txt" > "$filepath/Text/serie.xhtml"
- cat "$scriptpath/temp/description.html" >> "$filepath/Text/serie.xhtml"
+ cat "$scriptpath/temp/header.txt" > "$filepath/Text/serie.xhtml"
+ cat "$scriptpath/temp/serie.html" >> "$filepath/Text/serie.xhtml"
  echo "</body></html>" >> "$filepath/Text/serie.xhtml"
 fi
 
