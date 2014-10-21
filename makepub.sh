@@ -72,9 +72,6 @@ echo "Please provide the metadata"
 echo -n "Author: " ; read author
 echo -n "Title: " ; read title
 echo -n "Publisher: " ; read publisher
-echo "Description will be taken from $filepath/description.$ext"
-echo "Contact informations will be taken from $filepath/contact.$ext"
-echo "Serie informations will be taken from $filepath/serie.$ext"
 
 # set language rules
 echo -n "Choose language [en/fr]: " ; read lang
@@ -89,17 +86,26 @@ convertpage $filename
 
 if [ -r $filepath/description.$ext ] ;
 then
+ echo "Description will be taken from $filepath/description.$ext"
  convertpage description
+else
+ echo "Description page not found"
 fi
 
 if [ -r $filepath/contact.$ext ] ;
 then
+ echo "Contact informations will be taken from $filepath/contact.$ext"
  convertpage contact
+else
+ echo "Contact page not found"
 fi
 
 if [ -r $filepath/serie.$ext ] ;
 then
+ echo "Serie informations will be taken from $filepath/serie.$ext"
  convertpage serie
+else
+ echo "Serie page not found"
 fi
 
 # replace <hr> with a html entity
