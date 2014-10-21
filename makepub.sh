@@ -163,9 +163,6 @@ do
   prefix=""
  fi
  makexhtml $i chap$prefix$chnb
-# cat "$scriptpath/temp/header.txt" > "$filepath/Text/chap$prefix$chnb.xhtml"
-# cat $i >> "$filepath/Text/chap$prefix$chnb.xhtml"
-# echo "</body></html>" >> "$filepath/Text/chap$prefix$chnb.xhtml"
  chnb=$(( chnb + 1 ))
 done
 
@@ -175,27 +172,18 @@ rm "$filepath"/Text/part*
 if [ -r "$filepath/description.$ext" ] ;
 then
  makexhtml "$scriptpath/temp/description.html" title_page
-# cat "$scriptpath/temp/header.txt" > "$filepath/Text/title_page.xhtml"
-# cat "$scriptpath/temp/description.html" >> "$filepath/Text/title_page.xhtml"
-# echo "</body></html>" >> "$filepath/Text/title_page.xhtml"
 fi
 
 # writing contact page
 if [ -r "$filepath/description.$ext" ] ;
 then
  makexhtml "$scriptpath/temp/contact.html" contact
-# cat "$scriptpath/temp/header.txt" > "$filepath/Text/contact.xhtml"
-# cat "$scriptpath/temp/contact.html" >> "$filepath/Text/contact.xhtml"
-# echo "</body></html>" >> "$filepath/Text/contact.xhtml"
 fi
 
 # writing serie page
 if [ -r "$filepath/description.$ext" ] ;
 then
  makexhtml "$scriptpath/temp/serie.html" serie
-# cat "$scriptpath/temp/header.txt" > "$filepath/Text/serie.xhtml"
-# cat "$scriptpath/temp/serie.html" >> "$filepath/Text/serie.xhtml"
-# echo "</body></html>" >> "$filepath/Text/serie.xhtml"
 fi
 
 
