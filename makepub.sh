@@ -11,7 +11,7 @@
 function senderror()
 {
  echo "$1" ;
- rm -r "$scriptpath"/temp ;
+ rm -r "$scriptpath/temp" ;
  exit 1 ;
 }
 
@@ -22,6 +22,13 @@ function convertpage()
  sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' "$scriptpath/temp/$1.tmp"
  recode -dt u8..html "$scriptpath/temp/$1.tmp"
  perl "$scriptpath/markdown.pl" --html4tags "$scriptpath/temp/$1.tmp" > "$scriptpath/temp/$1.html"
+}
+
+function makexhtml()
+{
+ cat "$scriptpath/temp/header.txt" > "$filepath/Text/$2.xhtml"
+ cat $1 >> "$filepath/Text/$2.xhtml"
+ echo "</body></html>" >> "$filepath/Text/$2.xhtml"
 }
 
 scriptpath=`dirname $0`
@@ -129,14 +136,14 @@ then
       senderror "$hr is not a valid html entity"
     fi
     hr="\\$hr"
-    sed -i "s/<hr>/\n<p class=\"hr\">$hr<\/p>\n/g" $workingname.html
+    sed -i "s/<hr>/\n<p class=\"hr\">$hr<\/p>\n/g" "$workingname.html"
   ;;
   esac
 fi
 
 # spliting chapters
 mkdir $filepath/Text
-csplit -sz -f "$filepath/Text/part" $workingname.html '/^<h1>/' {*}
+csplit -sz -f "$filepath/Text/part" "$workingname.html" '/^<h1>/' {*}
 
 # wrapping chapters
 
@@ -149,36 +156,40 @@ do
  else
   prefix=""
  fi
- cat "$scriptpath/temp/header.txt" > "$filepath/Text/chap$prefix$chnb.xhtml"
- cat $i >> "$filepath/Text/chap$prefix$chnb.xhtml"
- echo "</body></html>" >> "$filepath/Text/chap$prefix$chnb.xhtml"
+ makexhtml $i chap$prefix$chnb
+# cat "$scriptpath/temp/header.txt" > "$filepath/Text/chap$prefix$chnb.xhtml"
+# cat $i >> "$filepath/Text/chap$prefix$chnb.xhtml"
+# echo "</body></html>" >> "$filepath/Text/chap$prefix$chnb.xhtml"
  chnb=$(( chnb + 1 ))
 done
 
 rm "$filepath"/Text/part*
 
 # writing title page
-if [ -r $filepath/description.$ext ] ;
+if [ -r "$filepath/description.$ext" ] ;
 then
- cat "$scriptpath/temp/header.txt" > "$filepath/Text/title_page.xhtml"
- cat "$scriptpath/temp/description.html" >> "$filepath/Text/title_page.xhtml"
- echo "</body></html>" >> "$filepath/Text/title_page.xhtml"
+ makexhtml "$scriptpath/temp/description.html" title_page
+# cat "$scriptpath/temp/header.txt" > "$filepath/Text/title_page.xhtml"
+# cat "$scriptpath/temp/description.html" >> "$filepath/Text/title_page.xhtml"
+# echo "</body></html>" >> "$filepath/Text/title_page.xhtml"
 fi
 
 # writing contact page
-if [ -r $filepath/description.$ext ] ;
+if [ -r "$filepath/description.$ext" ] ;
 then
- cat "$scriptpath/temp/header.txt" > "$filepath/Text/contact.xhtml"
- cat "$scriptpath/temp/contact.html" >> "$filepath/Text/contact.xhtml"
- echo "</body></html>" >> "$filepath/Text/contact.xhtml"
+ makexhtml "$scriptpath/temp/contact.html" contact
+# cat "$scriptpath/temp/header.txt" > "$filepath/Text/contact.xhtml"
+# cat "$scriptpath/temp/contact.html" >> "$filepath/Text/contact.xhtml"
+# echo "</body></html>" >> "$filepath/Text/contact.xhtml"
 fi
 
 # writing serie page
-if [ -r $filepath/description.$ext ] ;
+if [ -r "$filepath/description.$ext" ] ;
 then
- cat "$scriptpath/temp/header.txt" > "$filepath/Text/serie.xhtml"
- cat "$scriptpath/temp/serie.html" >> "$filepath/Text/serie.xhtml"
- echo "</body></html>" >> "$filepath/Text/serie.xhtml"
+ makexhtml "$scriptpath/temp/serie.html" serie
+# cat "$scriptpath/temp/header.txt" > "$filepath/Text/serie.xhtml"
+# cat "$scriptpath/temp/serie.html" >> "$filepath/Text/serie.xhtml"
+# echo "</body></html>" >> "$filepath/Text/serie.xhtml"
 fi
 
 
