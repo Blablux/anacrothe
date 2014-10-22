@@ -168,22 +168,20 @@ done
 
 rm "$filepath"/Text/part*
 
-# writing title page
+# writing optionnal pages
 if [ -r "$filepath/description.$ext" ] ;
 then
  makexhtml "$scriptpath/temp/description.html" title_page
 fi
-
-# writing contact page
 if [ -r "$filepath/description.$ext" ] ;
 then
  makexhtml "$scriptpath/temp/contact.html" contact
 fi
-
-# writing serie page
 if [ -r "$filepath/description.$ext" ] ;
 then
  makexhtml "$scriptpath/temp/serie.html" serie
 fi
 
+#making toc
+cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" > "$filepath/toc.ncx"
 
