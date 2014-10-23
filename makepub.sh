@@ -31,6 +31,13 @@ function makexhtml()
  echo "</body></html>" >> "$filepath/Text/$2.xhtml"
 }
 
+function makenavpoint()
+{
+ echo -e "    <navPoint id="navPoint-$1" playOrder="$1">" >> "$filepath/toc.ncx"
+ echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>" >> "$filepath/toc.ncx"
+ echo -e "     <content src="Text/$3.xhtml"/>\n    </navPoint>" >> "$filepath/toc.ncx"
+}
+
 scriptpath=`dirname $0`
 # check if file exist
 if [ ! -z $1 ] ;
@@ -72,6 +79,8 @@ echo "Please provide the metadata"
 echo -n "Author: " ; read author
 echo -n "Title: " ; read title
 echo -n "Publisher: " ; read publisher
+
+uid=${author// }$(date +%Y)${title// }
 
 # set language rules
 echo -n "Choose language [en/fr]: " ; read lang
@@ -183,5 +192,28 @@ then
 fi
 
 #making toc
-cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" > "$filepath/toc.ncx"
+cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
+nav=1
+if [ -r "$filepath/Text/title_page.xhtml" ] ;
+then
+ makenavpoint $nav "Title Page" "title_page"
+ nav=$(( nav + 1 ))
+fi
+for i in "$filepath"/Text/chap*
+do
+ makenavpoint $nav "Chapter $nav" "chapter-$nav"
+ nav=$(( nav + 1 ))
+done
+if [ -r "$filepath/Text/serie.xhtml" ] ;
+then
+ makenavpoint $nav "Serie" "serie"
+ nav=$(( nav + 1 ))
+fi
+if [ -r "$filepath/Text/contact.xhtml" ] ;
+then
+ makenavpoint $nav "About $author" "contact"
+ nav=$(( nav + 1 ))
+fi
+echo -e "  </navMap>\n</ncx>" >> "$filepath/toc.ncx"
+
 
