@@ -1,0 +1,11 @@
+<package xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="BookID">
+  <metadata>
+    <dc:title>$title</dc:title>
+    <dc:publisher>$author</dc:publisher>
+    <dc:creator opf:role="aut">$publisher</dc:creator>
+    <dc:description/>
+    <dc:language>$lang</dc:language>
+    <dc:identifier id="BookID" opf:scheme="UUID">$uid</dc:identifier>
+  </metadata>
+  <manifest>
+

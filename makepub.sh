@@ -55,9 +55,6 @@ else
   senderror "You must supply the file to convert"
 fi
 mkdir "$scriptpath/temp"
-cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
-cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
-
 mkdir "$filepath/review"
 mkdir "$filepath/review/META-INF"
 mkdir "$filepath/review/OEBPS"
@@ -100,10 +97,14 @@ then
  senderror "Unsupported language"
 fi
 
+# preparing headers
+cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
+cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
+cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
+
 # convert text to html
 
 convertpage $filename
-
 if [ -r $filepath/description.$ext ] ;
 then
  echo "Description will be taken from $filepath/description.$ext"
@@ -171,7 +172,6 @@ fi
 csplit -sz -f "$filepath/review/OEBPS/Text/part" "$workingname.html" '/^<h1>/' {*}
 
 # wrapping chapters
-
 chnb="1"
 for i in "$filepath/review/OEBPS/Text"/part*
 do
@@ -201,7 +201,9 @@ then
  makexhtml "$scriptpath/temp/serie.html" serie
 fi
 
-#making toc
+#making toc.ncx
+#FIXME: handling depth
+#FIXME: translations
 nav=1
 if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
 then
@@ -225,4 +227,41 @@ then
 fi
 echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
 
-
+#making content.opf
+if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
+then
+ echo "     <item href=\"Text/title_page.xhtml\" id=\"title_page.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+fi
+for i in "$filepath"/review/OEBPS/Text/chap*
+do
+ echo "     <item href=\"Text/$i\" id=\"$i\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+done
+if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
+then
+ echo "     <item href=\"Text/serie.xhtml\" id=\"serie.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+fi
+if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ] ;
+then
+ echo "     <item href=\"Text/contact.xhtml\" id=\"contact.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+fi
+echo -e "    <item href=\"toc.ncx\" id=\"ncx\" media-type=\"application/x-dtbncx+xml\"/>" >> "$filepath/review/OEBPS/content.opf"
+echo -e "    <item href=\"Styles/page-template.xpgt\" id=\"page-template.xpgt\" media-type=\"application/vnd.adobe-page-template+xml\"/>" >> "$filepath/review/OEBPS/content.opf"
+echo -e "    <item href=\"Styles/stylesheet.css\" id=\"stylesheet.css\" media-type=\"text/css\"/>" >> "$filepath/review/OEBPS/content.opf"
+echo -e "  </manifest>\n  <spine toc=\"ncx\">" >> "$filepath/review/OEBPS/content.opf"
+if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
+then
+ echo "    <itemref idref=\"title_page.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
+fi
+for i in "$filepath"/review/OEBPS/Text/chap*
+do
+ echo "    <itemref idref=\"$i\"/>" >> "$filepath/review/OEBPS/content.opf"
+done
+if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
+then
+ echo "    <itemref idref=\"serie.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
+fi
+if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ] ;
+then
+ echo "    <itemref idref=\"contact.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
+fi
+echo -e "  </spine>\n  <guide/>\n</package>" >> "$filepath/review/OEBPS/content.opf"
