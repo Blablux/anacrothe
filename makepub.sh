@@ -26,16 +26,16 @@ function convertpage()
 
 function makexhtml()
 {
- cat "$scriptpath/temp/header.txt" > "$filepath/Text/$2.xhtml"
- cat $1 >> "$filepath/Text/$2.xhtml"
- echo "</body></html>" >> "$filepath/Text/$2.xhtml"
+ cat "$scriptpath/temp/header.txt" > "$filepath/review/OEBPS/Text/$2.xhtml"
+ cat $1 >> "$filepath/review/OEBPS/Text/$2.xhtml"
+ echo "</body></html>" >> "$filepath/review/OEBPS/Text/$2.xhtml"
 }
 
 function makenavpoint()
 {
- echo -e "    <navPoint id="navPoint-$1" playOrder="$1">" >> "$filepath/toc.ncx"
- echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>" >> "$filepath/toc.ncx"
- echo -e "     <content src="Text/$3.xhtml"/>\n    </navPoint>" >> "$filepath/toc.ncx"
+ echo -e "    <navPoint id="navPoint-$1" playOrder="$1">" >> "$filepath/review/OEBPS/toc.ncx"
+ echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>" >> "$filepath/review/OEBPS/toc.ncx"
+ echo -e "     <content src="Text/$3.xhtml"/>\n    </navPoint>" >> "$filepath/review/OEBPS/toc.ncx"
 }
 
 scriptpath=`dirname $0`
@@ -54,8 +54,19 @@ then
 else
   senderror "You must supply the file to convert"
 fi
-mkdir "$scriptpath"/temp
+mkdir "$scriptpath/temp"
 cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
+cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
+
+mkdir "$filepath/review"
+mkdir "$filepath/review/META-INF"
+mkdir "$filepath/review/OEBPS"
+mkdir "$filepath/review/OEBPS/Style"
+mkdir "$filepath/review/OEBPS/Text"
+cp "$scriptpath/data/mimetype" "$filepath/review/"
+cp "$scriptpath/data/container.xml" "$filepath/review/META-INF/"
+cp "$scriptpath/data/page-template.xpgt" "$filepath/review/OEBPS/Style/"
+cp "$scriptpath/data/stylesheet.css" "$filepath/review/OEBPS/Style/"
 
 # check if file is text and markdown
 if ! file --mime-type "$1" | grep -q text/plain$; then
@@ -157,13 +168,12 @@ then
 fi
 
 # spliting chapters
-mkdir $filepath/Text
-csplit -sz -f "$filepath/Text/part" "$workingname.html" '/^<h1>/' {*}
+csplit -sz -f "$filepath/review/OEBPS/Text/part" "$workingname.html" '/^<h1>/' {*}
 
 # wrapping chapters
 
 chnb="1"
-for i in "$filepath"/Text/part*
+for i in "$filepath/review/OEBPS/Text"/part*
 do
  if [ $chnb -lt 10 ]
  then
@@ -175,7 +185,7 @@ do
  chnb=$(( chnb + 1 ))
 done
 
-rm "$filepath"/Text/part*
+rm "$filepath"/review/OEBPS/Text/part*
 
 # writing optionnal pages
 if [ -r "$filepath/description.$ext" ] ;
@@ -192,28 +202,27 @@ then
 fi
 
 #making toc
-cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
 nav=1
-if [ -r "$filepath/Text/title_page.xhtml" ] ;
+if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
 then
  makenavpoint $nav "Title Page" "title_page"
  nav=$(( nav + 1 ))
 fi
-for i in "$filepath"/Text/chap*
+for i in "$filepath"/review/OEBPS/Text/chap*
 do
  makenavpoint $nav "Chapter $nav" "chapter-$nav"
  nav=$(( nav + 1 ))
 done
-if [ -r "$filepath/Text/serie.xhtml" ] ;
+if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
 then
  makenavpoint $nav "Serie" "serie"
  nav=$(( nav + 1 ))
 fi
-if [ -r "$filepath/Text/contact.xhtml" ] ;
+if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ] ;
 then
  makenavpoint $nav "About $author" "contact"
  nav=$(( nav + 1 ))
 fi
-echo -e "  </navMap>\n</ncx>" >> "$filepath/toc.ncx"
+echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
 
 
