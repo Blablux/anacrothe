@@ -20,8 +20,8 @@ function convertpage()
  sed -f "lang/sed_$lang.txt" "$filepath/$1.$ext" > "$scriptpath/temp/$1.tmp"
  sed -i ':a;N;$!ba;s/\n/  \n/g' "$scriptpath/temp/$1.tmp"
  sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' "$scriptpath/temp/$1.tmp"
- recode -dt u8..html "$scriptpath/temp/$1.tmp"
- perl "$scriptpath/markdown.pl" --html4tags "$scriptpath/temp/$1.tmp" > "$scriptpath/temp/$1.html"
+ recode -dt u8..h0 "$scriptpath/temp/$1.tmp"
+ perl "$scriptpath/markdown.pl" "$scriptpath/temp/$1.tmp" > "$scriptpath/temp/$1.html"
 }
 
 function makexhtml()
@@ -33,9 +33,9 @@ function makexhtml()
 
 function makenavpoint()
 {
- echo -e "    <navPoint id="navPoint-$1" playOrder="$1">" >> "$filepath/review/OEBPS/toc.ncx"
+ echo -e "    <navPoint id=\"navPoint-$1\" playOrder=\"$1\">" >> "$filepath/review/OEBPS/toc.ncx"
  echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>" >> "$filepath/review/OEBPS/toc.ncx"
- echo -e "     <content src="Text/$3.xhtml"/>\n    </navPoint>" >> "$filepath/review/OEBPS/toc.ncx"
+ echo -e "     <content src=\"Text/$3\"/>\n    </navPoint>" >> "$filepath/review/OEBPS/toc.ncx"
 }
 
 scriptpath=`dirname $0`
@@ -58,12 +58,12 @@ mkdir "$scriptpath/temp"
 mkdir "$filepath/review"
 mkdir "$filepath/review/META-INF"
 mkdir "$filepath/review/OEBPS"
-mkdir "$filepath/review/OEBPS/Style"
+mkdir "$filepath/review/OEBPS/Styles"
 mkdir "$filepath/review/OEBPS/Text"
 cp "$scriptpath/data/mimetype" "$filepath/review/"
 cp "$scriptpath/data/container.xml" "$filepath/review/META-INF/"
-cp "$scriptpath/data/page-template.xpgt" "$filepath/review/OEBPS/Style/"
-cp "$scriptpath/data/stylesheet.css" "$filepath/review/OEBPS/Style/"
+cp "$scriptpath/data/page-template.xpgt" "$filepath/review/OEBPS/Styles/"
+cp "$scriptpath/data/stylesheet.css" "$filepath/review/OEBPS/Styles/"
 
 # check if file is text and markdown
 if ! file --mime-type "$1" | grep -q text/plain$; then
@@ -99,8 +99,8 @@ fi
 
 # preparing headers
 cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
-cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
-cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/toc.ncx"
+cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
+cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
 
 # convert text to html
 
@@ -140,7 +140,7 @@ then
     senderror "No html entity was provided"
   ;;
   1)
-    hr=$(echo "$hr" | recode u8..html)
+    hr=$(echo "$hr" | recode u8..h0)
     if [ ${#hr} = 1 ]
     then
       senderror "$hr is not a valid html entity"
@@ -207,34 +207,35 @@ fi
 nav=1
 if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
 then
- makenavpoint $nav "Title Page" "title_page"
+ makenavpoint $nav "Title Page" "title_page.xhtml"
  nav=$(( nav + 1 ))
 fi
 for i in "$filepath"/review/OEBPS/Text/chap*
 do
- makenavpoint $nav "Chapter $nav" "chapter-$nav"
+ makenavpoint $nav "Chapter $nav" $(basename "$i")
  nav=$(( nav + 1 ))
 done
 if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
 then
- makenavpoint $nav "Serie" "serie"
+ makenavpoint $nav "Serie" "serie.xhtml"
  nav=$(( nav + 1 ))
 fi
 if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ] ;
 then
- makenavpoint $nav "About $author" "contact"
+ makenavpoint $nav "About $author" "contact.xhtml"
  nav=$(( nav + 1 ))
 fi
 echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
 
 #making content.opf
+
 if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
 then
  echo "     <item href=\"Text/title_page.xhtml\" id=\"title_page.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
 fi
 for i in "$filepath"/review/OEBPS/Text/chap*
 do
- echo "     <item href=\"Text/$i\" id=\"$i\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+ echo "     <item href=\"Text/$(basename "$i")\" id=\"$(basename "$i")\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
 done
 if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
 then
@@ -254,7 +255,7 @@ then
 fi
 for i in "$filepath"/review/OEBPS/Text/chap*
 do
- echo "    <itemref idref=\"$i\"/>" >> "$filepath/review/OEBPS/content.opf"
+ echo "    <itemref idref=\"$(basename "$i")\"/>" >> "$filepath/review/OEBPS/content.opf"
 done
 if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
 then
@@ -265,3 +266,12 @@ then
  echo "    <itemref idref=\"contact.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
 fi
 echo -e "  </spine>\n  <guide/>\n</package>" >> "$filepath/review/OEBPS/content.opf"
+
+# zipping files
+rm -r $scriptpath/temp
+cd "$filepath/review"
+zip -X -0 "$filepath/${title// }.epub.zip" mimetype
+zip -X -9 -r "$filepath/${title// }.epub.zip" * -x mimetype
+mv "$filepath/${title// }.epub.zip" "$filepath/${title// }.epub"
+rm -r $filepath/review
+

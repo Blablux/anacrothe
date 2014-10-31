@@ -8,4 +8,3 @@
     <dc:identifier id="BookID" opf:scheme="UUID">$uid</dc:identifier>
   </metadata>
   <manifest>
-
