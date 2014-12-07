@@ -11,7 +11,9 @@
 function senderror()
 {
  echo "$1" ;
- rm -r "$scriptpath/temp" ;
+  if [ -d "$scriptpath/temp" ]; then
+   rm -r "$scriptpath/temp" ;
+  fi
  exit 1 ;
 }
 
@@ -40,15 +42,13 @@ function makenavpoint()
 
 scriptpath=`dirname $0`
 # check if file exist
-if [ ! -z $1 ] ;
-then
+if [ ! -z $1 ]; then
   filepath=`dirname $1`
   filename=$(basename "$1")
   ext="${filename##*.}"
   filename="${filename%.*}"
   workingname="$scriptpath"/temp/"$filename"
-  if [ ! -r $filepath/$filename.$ext ] ;
-  then
+  if [ ! -r $filepath/$filename.$ext ]; then
     senderror "$filename.$ext can't be read!"
   fi
 else
@@ -67,14 +67,12 @@ cp "$scriptpath/data/stylesheet.css" "$filepath/review/OEBPS/Styles/"
 if ! file --mime-type "$1" | grep -q text/plain$; then
   echo "WARNING :$filename.$ext does not look like plain text"
   echo -n "Do you want to continue [y/n] ? " ; read textfile
-  if [[ "$textfile" != [yY] ]] ; then
+  if [[ "$textfile" != [yY] ]]; then
     exit 1
-  elif [[ "$ext" != md && "$ext" != markdown && "$ext" != mdown && "$ext" != mkdn && "$ext" != mkd && "$ext" != mdwn && "$ext" != mdtxt && "$ext" != mdtext] ]] ;
-  then
+  elif [[ "$ext" != md && "$ext" != markdown && "$ext" != mdown && "$ext" != mkdn && "$ext" != mkd && "$ext" != mdwn && "$ext" != mdtxt && "$ext" != mdtext] ]]; then
     echo "File doesn't use have a markdown extension."
     echo -n "Do you wish to continue? [y/n] ?" ; read markdown
-    if [[ $markdown != [yY] ]] ;
-    then
+    if [[ $markdown != [yY] ]]; then
       exit 1
     fi
   fi
@@ -90,8 +88,7 @@ uid=${author// }$(date +%Y)${title// }
 
 # set language rules
 echo -n "Choose language [en/fr]: " ; read lang
-if [ ! -r "$scriptpath/lang/sed_$lang.txt" ] ;
-then
+if [ ! -r "$scriptpath/lang/sed_$lang.txt" ]; then
  senderror "Unsupported language"
 fi
 
@@ -103,24 +100,21 @@ cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/
 # convert text to html
 
 convertpage $filename
-if [ -r $filepath/description.$ext ] ;
-then
+if [ -r $filepath/description.$ext ]; then
  echo "Description will be taken from $filepath/description.$ext"
  convertpage description
 else
  echo "Description page not found"
 fi
 
-if [ -r $filepath/contact.$ext ] ;
-then
+if [ -r $filepath/contact.$ext ]; then
  echo "Contact informations will be taken from $filepath/contact.$ext"
  convertpage contact
 else
  echo "Contact page not found"
 fi
 
-if [ -r $filepath/serie.$ext ] ;
-then
+if [ -r $filepath/serie.$ext ]; then
  echo "Serie informations will be taken from $filepath/serie.$ext"
  convertpage serie
 else
@@ -130,8 +124,7 @@ fi
 # replace <hr> with a html entity
 echo "Do you want to replace horizontal rules with" ;
 echo -n "a single html entity? [y/n] " ; read replacehr
-if [[ "$replacehr" == [yY] ]] ;
-then
+if [[ "$replacehr" == [yY] ]]; then
   echo -n "Choose the html entity to use: " ; read hr
   case ${#hr} in
   0)
@@ -139,25 +132,21 @@ then
   ;;
   1)
     hr=$(echo "$hr" | recode u8..h0)
-    if [ ${#hr} = 1 ]
-    then
+    if [ ${#hr} = 1 ]; then
       senderror "$hr is not a valid html entity"
     fi
     hr="\\$hr"
     sed -i "s/<hr>/\n<p class=\"hr\">$hr<\/p>\n/g" $workingname.html
   ;;
   *)
-    if [[ ! $hr =~ ^\& ]];
-    then
+    if [[ ! $hr =~ ^\& ]]; then
       hr="&$hr"
     fi
-    if [[ ${hr: -1} != ";" ]];
-    then
+    if [[ ${hr: -1} != ";" ]]; then
       hr="$hr;"
     fi
     hrcheck=$(echo "$hr" | recode html..u8)
-    if [ ${#hrcheck} != 1 ]
-    then
+    if [ ${#hrcheck} != 1 ]; then
       senderror "$hr is not a valid html entity"
     fi
     hr="\\$hr"
@@ -173,8 +162,7 @@ csplit -sz -f "$filepath/review/OEBPS/Text/part" "$workingname.html" '/^<h1>/' {
 chnb="1"
 for i in "$filepath/review/OEBPS/Text"/part*
 do
- if [ $chnb -lt 10 ]
- then
+ if [ $chnb -lt 10 ]; then
   prefix="0"
  else
   prefix=""
@@ -186,16 +174,13 @@ done
 rm "$filepath"/review/OEBPS/Text/part*
 
 # writing optionnal pages
-if [ -r "$filepath/description.$ext" ] ;
-then
+if [ -r "$filepath/description.$ext" ]; then
  makexhtml "$scriptpath/temp/description.html" title_page
 fi
-if [ -r "$filepath/description.$ext" ] ;
-then
+if [ -r "$filepath/description.$ext" ]; then
  makexhtml "$scriptpath/temp/contact.html" contact
 fi
-if [ -r "$filepath/description.$ext" ] ;
-then
+if [ -r "$filepath/description.$ext" ]; then
  makexhtml "$scriptpath/temp/serie.html" serie
 fi
 
@@ -203,8 +188,7 @@ fi
 #FIXME: handling depth
 #FIXME: translations
 nav=1
-if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ]; then
  makenavpoint $nav "Title Page" "title_page.xhtml"
  nav=$(( nav + 1 ))
 fi
@@ -213,13 +197,11 @@ do
  makenavpoint $nav "Chapter $nav" $(basename "$i")
  nav=$(( nav + 1 ))
 done
-if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ]; then
  makenavpoint $nav "Serie" "serie.xhtml"
  nav=$(( nav + 1 ))
 fi
-if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ]; then
  makenavpoint $nav "About $author" "contact.xhtml"
  nav=$(( nav + 1 ))
 fi
@@ -227,40 +209,34 @@ echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
 
 #making content.opf
 
-if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ]; then
  echo "     <item href=\"Text/title_page.xhtml\" id=\"title_page.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
 fi
 for i in "$filepath"/review/OEBPS/Text/chap*
 do
  echo "     <item href=\"Text/$(basename "$i")\" id=\"$(basename "$i")\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
 done
-if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ]; then
  echo "     <item href=\"Text/serie.xhtml\" id=\"serie.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
 fi
-if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ]; then
  echo "     <item href=\"Text/contact.xhtml\" id=\"contact.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
 fi
 echo -e "    <item href=\"toc.ncx\" id=\"ncx\" media-type=\"application/x-dtbncx+xml\"/>" >> "$filepath/review/OEBPS/content.opf"
 echo -e "    <item href=\"Styles/page-template.xpgt\" id=\"page-template.xpgt\" media-type=\"application/vnd.adobe-page-template+xml\"/>" >> "$filepath/review/OEBPS/content.opf"
 echo -e "    <item href=\"Styles/stylesheet.css\" id=\"stylesheet.css\" media-type=\"text/css\"/>" >> "$filepath/review/OEBPS/content.opf"
 echo -e "  </manifest>\n  <spine toc=\"ncx\">" >> "$filepath/review/OEBPS/content.opf"
-if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ]; then
  echo "    <itemref idref=\"title_page.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
 fi
 for i in "$filepath"/review/OEBPS/Text/chap*
 do
  echo "    <itemref idref=\"$(basename "$i")\"/>" >> "$filepath/review/OEBPS/content.opf"
 done
-if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ]; then
  echo "    <itemref idref=\"serie.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
 fi
-if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ] ;
-then
+if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ]; then
  echo "    <itemref idref=\"contact.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
 fi
 echo -e "  </spine>\n  <guide/>\n</package>" >> "$filepath/review/OEBPS/content.opf"
