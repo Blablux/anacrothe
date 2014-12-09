@@ -1,0 +1,6 @@
+    <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
+    <item href="Styles/page-template.xpgt" id="page-template.xpgt" media-type="application/vnd.adobe-page-template+xml"/>
+    <item href="Styles/stylesheet.css" id="stylesheet.css" media-type="text/css"/>
+  </manifest>
+  <spine toc="ncx">
+
