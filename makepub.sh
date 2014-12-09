@@ -41,6 +41,7 @@ function makenavpoint()
 }
 
 scriptpath=`dirname $0`
+nav=1
 # check if file exist
 if [ ! -z $1 ]; then
   filepath=`dirname $1`
@@ -62,6 +63,7 @@ cp "$scriptpath/data/mimetype" "$filepath/review/"
 cp "$scriptpath/data/container.xml" "$filepath/review/META-INF/"
 cp "$scriptpath/data/page-template.xpgt" "$filepath/review/OEBPS/Styles/"
 cp "$scriptpath/data/stylesheet.css" "$filepath/review/OEBPS/Styles/"
+cp "$scriptpath/data/content2.opf" "$filepath/review/OEBPS/"
 
 # check if file is text and markdown
 if ! file --mime-type "$1" | grep -q text/plain$; then
@@ -97,31 +99,21 @@ cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/t
 cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
 cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
 
-# convert text to html
-
-convertpage $filename
+# working
 if [ -r $filepath/description.$ext ]; then
  echo "Description will be taken from $filepath/description.$ext"
  convertpage description
+ makexhtml "$scriptpath/temp/description.html" title_page
+ makenavpoint $nav "Title Page" "title_page.xhtml"
+ nav=$(( nav + 1 ))
+ echo "     <item href=\"Text/title_page.xhtml\" id=\"title_page.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+ echo "    <itemref idref=\"title_page.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
 else
  echo "Description page not found"
 fi
 
-if [ -r $filepath/contact.$ext ]; then
- echo "Contact informations will be taken from $filepath/contact.$ext"
- convertpage contact
-else
- echo "Contact page not found"
-fi
+convertpage $filename
 
-if [ -r $filepath/serie.$ext ]; then
- echo "Serie informations will be taken from $filepath/serie.$ext"
- convertpage serie
-else
- echo "Serie page not found"
-fi
-
-# replace <hr> with a html entity
 echo "Do you want to replace horizontal rules with" ;
 echo -n "a single html entity? [y/n] " ; read replacehr
 if [[ "$replacehr" == [yY] ]]; then
@@ -155,10 +147,8 @@ if [[ "$replacehr" == [yY] ]]; then
   esac
 fi
 
-# spliting chapters
 csplit -sz -f "$filepath/review/OEBPS/Text/part" "$workingname.html" '/^<h1>/' {*}
 
-# wrapping chapters
 chnb="1"
 for i in "$filepath/review/OEBPS/Text"/part*
 do
@@ -167,85 +157,49 @@ do
  else
   prefix=""
  fi
- makexhtml $i chap$prefix$chnb
+ j=chap$prefix$chnb
+ makexhtml $i $j
  chnb=$(( chnb + 1 ))
+ makenavpoint $nav "Chapter $nav" "$(basename "$j").xhtml"
+ nav=$(( nav + 1 ))
+ echo "     <item href=\"Text/$(basename "$j").xhtml\" id=\"$(basename "$j")\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+ echo "    <itemref idref=\"$(basename "$j")\"/>" >> "$filepath/review/OEBPS/content2.opf"
 done
 
-rm "$filepath"/review/OEBPS/Text/part*
-
-# writing optionnal pages
-if [ -r "$filepath/description.$ext" ]; then
- makexhtml "$scriptpath/temp/description.html" title_page
-fi
-if [ -r "$filepath/description.$ext" ]; then
- makexhtml "$scriptpath/temp/contact.html" contact
-fi
-if [ -r "$filepath/description.$ext" ]; then
+if [ -r $filepath/serie.$ext ]; then
+ echo "Serie informations will be taken from $filepath/serie.$ext"
+ convertpage serie
  makexhtml "$scriptpath/temp/serie.html" serie
-fi
-
-#making toc.ncx
-#FIXME: handling depth
-#FIXME: translations
-nav=1
-if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ]; then
- makenavpoint $nav "Title Page" "title_page.xhtml"
- nav=$(( nav + 1 ))
-fi
-for i in "$filepath"/review/OEBPS/Text/chap*
-do
- makenavpoint $nav "Chapter $nav" $(basename "$i")
- nav=$(( nav + 1 ))
-done
-if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ]; then
  makenavpoint $nav "Serie" "serie.xhtml"
  nav=$(( nav + 1 ))
+ echo "     <item href=\"Text/serie.xhtml\" id=\"serie.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+ echo "    <itemref idref=\"serie.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+else
+ echo "Serie page not found"
 fi
-if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ]; then
+
+if [ -r $filepath/contact.$ext ]; then
+ echo "Contact informations will be taken from $filepath/contact.$ext"
+ convertpage contact
+ makexhtml "$scriptpath/temp/contact.html" contact
  makenavpoint $nav "About $author" "contact.xhtml"
  nav=$(( nav + 1 ))
-fi
-echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
-
-#making content.opf
-
-if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ]; then
- echo "     <item href=\"Text/title_page.xhtml\" id=\"title_page.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
-fi
-for i in "$filepath"/review/OEBPS/Text/chap*
-do
- echo "     <item href=\"Text/$(basename "$i")\" id=\"$(basename "$i")\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
-done
-if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ]; then
- echo "     <item href=\"Text/serie.xhtml\" id=\"serie.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
-fi
-if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ]; then
  echo "     <item href=\"Text/contact.xhtml\" id=\"contact.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+ echo "    <itemref idref=\"contact.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+else
+ echo "Contact page not found"
 fi
-echo -e "    <item href=\"toc.ncx\" id=\"ncx\" media-type=\"application/x-dtbncx+xml\"/>" >> "$filepath/review/OEBPS/content.opf"
-echo -e "    <item href=\"Styles/page-template.xpgt\" id=\"page-template.xpgt\" media-type=\"application/vnd.adobe-page-template+xml\"/>" >> "$filepath/review/OEBPS/content.opf"
-echo -e "    <item href=\"Styles/stylesheet.css\" id=\"stylesheet.css\" media-type=\"text/css\"/>" >> "$filepath/review/OEBPS/content.opf"
-echo -e "  </manifest>\n  <spine toc=\"ncx\">" >> "$filepath/review/OEBPS/content.opf"
-if [ -r "$filepath/review/OEBPS/Text/title_page.xhtml" ]; then
- echo "    <itemref idref=\"title_page.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
-fi
-for i in "$filepath"/review/OEBPS/Text/chap*
-do
- echo "    <itemref idref=\"$(basename "$i")\"/>" >> "$filepath/review/OEBPS/content.opf"
-done
-if [ -r "$filepath/review/OEBPS/Text/serie.xhtml" ]; then
- echo "    <itemref idref=\"serie.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
-fi
-if [ -r "$filepath/review/OEBPS/Text/contact.xhtml" ]; then
- echo "    <itemref idref=\"contact.xhtml\"/>" >> "$filepath/review/OEBPS/content.opf"
-fi
-echo -e "  </spine>\n  <guide/>\n</package>" >> "$filepath/review/OEBPS/content.opf"
 
-# zipping files
+# wrapping up
+cat "$filepath/review/OEBPS/content2.opf" >> "$filepath/review/OEBPS/content.opf"
+rm "$filepath/review/OEBPS/content2.opf"
+echo -e "  </spine>\n  <guide/>\n</package>" >> "$filepath/review/OEBPS/content.opf"
+echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
+rm "$filepath"/review/OEBPS/Text/part*
 rm -r $scriptpath/temp
 cd "$filepath/review"
 zip -X -0 "$filepath/${title// }.epub.zip" mimetype
 zip -X -9 -r "$filepath/${title// }.epub.zip" * -x mimetype
 mv "$filepath/${title// }.epub.zip" "$filepath/${title// }.epub"
-rm -r $filepath/review
+#rm -r $filepath/review
 
