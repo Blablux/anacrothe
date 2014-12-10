@@ -201,5 +201,5 @@ cd "$filepath/review"
 zip -X -0 "$filepath/${title// }.epub.zip" mimetype
 zip -X -9 -r "$filepath/${title// }.epub.zip" * -x mimetype
 mv "$filepath/${title// }.epub.zip" "$filepath/${title// }.epub"
-#rm -r $filepath/review
+rm -r $filepath/review
 
