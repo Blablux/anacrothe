@@ -112,7 +112,7 @@ if [ -r $filepath/cover.png ]; then
 fi
 
 if [ ! -z $cover_ext ]; then
-cover="    <meta name=\"cover\" content=\"cover\"/>\n"
+ cover="    <meta name=\"cover\" content=\"cover\"\/>\n"
  echo "Cover will be taken from $filepath/cover.$cover_ext"
  cp "$filepath/cover.$cover_ext" "$filepath/review/OEBPS/"
  cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover/$cover/g" > "$filepath/review/OEBPS/cover.xhtml"
@@ -225,8 +225,9 @@ echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
 rm "$filepath"/review/OEBPS/Text/part*
 rm -r $scriptpath/temp
 cd "$filepath/review"
-zip -X -0 "$filepath/${title// }.epub.zip" mimetype
-zip -X -9 -r "$filepath/${title// }.epub.zip" * -x mimetype
+zip -X -0 -q "$filepath/${title// }.epub.zip" mimetype
+zip -X -9 -r -q "$filepath/${title// }.epub.zip" * -x mimetype
 mv "$filepath/${title// }.epub.zip" "$filepath/${title// }.epub"
+echo "$filepath/${title// }.epub created"
 rm -r $filepath/review
 
