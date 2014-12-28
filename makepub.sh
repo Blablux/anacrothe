@@ -55,15 +55,6 @@ if [ ! -z $1 ]; then
 else
   senderror "You must supply the file to convert"
 fi
-mkdir "$scriptpath/temp"
-mkdir -p "$filepath/review/META-INF"
-mkdir -p "$filepath/review/OEBPS/Styles"
-mkdir -p "$filepath/review/OEBPS/Text"
-cp "$scriptpath/data/mimetype" "$filepath/review/"
-cp "$scriptpath/data/container.xml" "$filepath/review/META-INF/"
-cp "$scriptpath/data/page-template.xpgt" "$filepath/review/OEBPS/Styles/"
-cp "$scriptpath/data/stylesheet.css" "$filepath/review/OEBPS/Styles/"
-cp "$scriptpath/data/content2.opf" "$filepath/review/OEBPS/"
 
 # check if file is text and markdown
 if ! file --mime-type "$1" | grep -q text/plain$; then
@@ -79,6 +70,16 @@ if ! file --mime-type "$1" | grep -q text/plain$; then
     fi
   fi
 fi
+
+mkdir "$scriptpath/temp"
+mkdir -p "$filepath/review/META-INF"
+mkdir -p "$filepath/review/OEBPS/Styles"
+mkdir -p "$filepath/review/OEBPS/Text"
+cp "$scriptpath/data/mimetype" "$filepath/review/"
+cp "$scriptpath/data/container.xml" "$filepath/review/META-INF/"
+cp "$scriptpath/data/page-template.xpgt" "$filepath/review/OEBPS/Styles/"
+cp "$scriptpath/data/stylesheet.css" "$filepath/review/OEBPS/Styles/"
+cp "$scriptpath/data/content2.opf" "$filepath/review/OEBPS/"
 
 # get metadata
 echo "Please provide the metadata"
@@ -96,8 +97,34 @@ fi
 
 # preparing headers
 cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
-cat "$scriptpath/data/toc.ncx" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
 cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
+
+# preparing cover
+if [ -r $filepath/cover.jpg ]; then
+ cover_ext="jpg"
+fi
+if [ -r $filepath/cover.png ]; then
+ if [ -r $filepath/cover.jpg ]; then
+  senderror "Two covers were found!"
+ else
+  cover_ext="png"
+ fi
+fi
+
+if [ ! -z $cover_ext ]; then
+cover="    <meta name=\"cover\" content=\"cover\"/>\n"
+ echo "Cover will be taken from $filepath/cover.$cover_ext"
+ cp "$filepath/cover.$cover_ext" "$filepath/review/OEBPS/"
+ cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover/$cover/g" > "$filepath/review/OEBPS/cover.xhtml"
+ makenavpoint $nav "Cover" "cover.xhtml"
+ nav=$(( nav + 1 ))
+ echo "     <item href=\"Text/cover.xhtml\" id=\"cover.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+ echo "    <itemref idref=\"cover.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+else
+ cover=""
+fi
+
+cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
 
 # working
 if [ -r $filepath/description.$ext ]; then
