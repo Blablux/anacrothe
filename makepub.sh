@@ -114,8 +114,8 @@ fi
 if [ ! -z $cover_ext ]; then
  cover="    <meta name=\"cover\" content=\"cover\"\/>\n"
  echo "Cover will be taken from $filepath/cover.$cover_ext"
- cp "$filepath/cover.$cover_ext" "$filepath/review/OEBPS/"
- cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover/$cover/g" > "$filepath/review/OEBPS/cover.xhtml"
+ cp "$filepath/cover.$cover_ext" "$filepath/review/OEBPS/Text/"
+ cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" > "$filepath/review/OEBPS/Text/cover.xhtml"
  makenavpoint $nav "Cover" "cover.xhtml"
  nav=$(( nav + 1 ))
  echo "     <item href=\"Text/cover.xhtml\" id=\"cover.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
