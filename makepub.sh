@@ -10,11 +10,10 @@
 
 function senderror()
 {
-  echo "$1" ;
-    if [ -d "$scriptpath/temp" ]; then
-      rm -r "$scriptpath/temp" ;
-    fi
-  exit 1 ;
+  if [ -d "$scriptpath/temp" ]; then
+    rm -r "$scriptpath/temp" ;
+  fi
+  exit "$1" ;
 }
 
 function convertpage()
