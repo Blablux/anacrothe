@@ -10,34 +10,34 @@
 
 function senderror()
 {
- echo "$1" ;
-  if [ -d "$scriptpath/temp" ]; then
-   rm -r "$scriptpath/temp" ;
-  fi
- exit 1 ;
+  echo "$1" ;
+    if [ -d "$scriptpath/temp" ]; then
+      rm -r "$scriptpath/temp" ;
+    fi
+  exit 1 ;
 }
 
 function convertpage()
 {
- sed -f "lang/sed_$lang.txt" "$filepath/$1.$ext" > "$scriptpath/temp/$1.tmp"
- sed -i ':a;N;$!ba;s/\n/  \n/g' "$scriptpath/temp/$1.tmp"
- sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' "$scriptpath/temp/$1.tmp"
- recode -dt u8..h0 "$scriptpath/temp/$1.tmp"
- perl "$scriptpath/markdown.pl" "$scriptpath/temp/$1.tmp" > "$scriptpath/temp/$1.html"
+  sed -f "lang/sed_$lang.txt" "$filepath/$1.$ext" > "$scriptpath/temp/$1.tmp"
+  sed -i ':a;N;$!ba;s/\n/  \n/g' "$scriptpath/temp/$1.tmp"
+  sed -i ':a;N;$!ba;s/  \n  \n/\n\n/g' "$scriptpath/temp/$1.tmp"
+  recode -dt u8..h0 "$scriptpath/temp/$1.tmp"
+  perl "$scriptpath/markdown.pl" "$scriptpath/temp/$1.tmp" > "$scriptpath/temp/$1.html"
 }
 
 function makexhtml()
 {
- cat "$scriptpath/temp/header.txt" > "$filepath/review/OEBPS/Text/$2.xhtml"
- cat $1 >> "$filepath/review/OEBPS/Text/$2.xhtml"
- echo "</body></html>" >> "$filepath/review/OEBPS/Text/$2.xhtml"
+  cat "$scriptpath/temp/header.txt" > "$filepath/review/OEBPS/Text/$2.xhtml"
+  cat $1 >> "$filepath/review/OEBPS/Text/$2.xhtml"
+  echo "</body></html>" >> "$filepath/review/OEBPS/Text/$2.xhtml"
 }
 
 function makenavpoint()
 {
- echo -e "    <navPoint id=\"navPoint-$1\" playOrder=\"$1\">" >> "$filepath/review/OEBPS/toc.ncx"
- echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>" >> "$filepath/review/OEBPS/toc.ncx"
- echo -e "     <content src=\"Text/$3\"/>\n    </navPoint>" >> "$filepath/review/OEBPS/toc.ncx"
+  echo -e "    <navPoint id=\"navPoint-$1\" playOrder=\"$1\">" >> "$filepath/review/OEBPS/toc.ncx"
+  echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>" >> "$filepath/review/OEBPS/toc.ncx"
+  echo -e "     <content src=\"Text/$3\"/>\n    </navPoint>" >> "$filepath/review/OEBPS/toc.ncx"
 }
 
 scriptpath=`dirname $0`
@@ -92,51 +92,57 @@ uid=${author// }$(date +%Y)${title// }
 # set language rules
 echo -n "Choose language [en/fr]: " ; read lang
 if [ ! -r "$scriptpath/lang/sed_$lang.txt" ]; then
- senderror "Unsupported language"
+  senderror "Unsupported language"
 fi
 
 # preparing headers
 cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
-cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
 
 # preparing cover
 if [ -r $filepath/cover.jpg ]; then
- cover_ext="jpg"
+  cover_ext="jpg"
 fi
 if [ -r $filepath/cover.png ]; then
- if [ -r $filepath/cover.jpg ]; then
-  senderror "Two covers were found!"
- else
-  cover_ext="png"
- fi
+  if [ -r $filepath/cover.jpg ]; then
+    senderror "Two covers were found!"
+  else
+    cover_ext="png"
+  fi
 fi
 
 if [ ! -z $cover_ext ]; then
- cover="    <meta name=\"cover\" content=\"cover\"\/>\n"
- echo "Cover will be taken from $filepath/cover.$cover_ext"
- cp "$filepath/cover.$cover_ext" "$filepath/review/OEBPS/Text/"
- cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" > "$filepath/review/OEBPS/Text/cover.xhtml"
- makenavpoint $nav "Cover" "cover.xhtml"
- nav=$(( nav + 1 ))
- echo "     <item href=\"Text/cover.xhtml\" id=\"cover.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
- echo "    <itemref idref=\"cover.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
-else
- cover=""
-fi
+  cover="    <meta name=\"cover\" content=\"cover\"\/>\n"
+  cover_opf="<meta name="cover" content="cover-image"/>"
+  echo "Cover will be taken from $filepath/cover.$cover_ext"
+  cp "$filepath/cover.$cover_ext" "$filepath/review/OEBPS/Text/"
+  cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover_ext/$cover_ext/g" -e "s/\$title/$title/g" > "$filepath/review/OEBPS/Text/cover.xhtml"
 
-cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
+  cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
+  makenavpoint $nav "Cover" "cover.xhtml"
+  nav=$(( nav + 1 ))
+
+  cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
+  echo "     <item href=\"Text/cover.xhtml\" id=\"cover.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+  echo "     <item href=\"Text/cover.$cover_ext\" id=\"cover-image\" media-type=\"image/$cover_ext\" />" >> "$filepath/review/OEBPS/content.opf"
+  echo "    <itemref idref=\"cover.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+
+else
+  cover=""
+  cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
+  cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
+fi
 
 # working
 if [ -r $filepath/description.$ext ]; then
- echo "Description will be taken from $filepath/description.$ext"
- convertpage description
- makexhtml "$scriptpath/temp/description.html" title_page
- makenavpoint $nav "Title Page" "title_page.xhtml"
- nav=$(( nav + 1 ))
- echo "     <item href=\"Text/title_page.xhtml\" id=\"title_page.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
- echo "    <itemref idref=\"title_page.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+  echo "Description will be taken from $filepath/description.$ext"
+  convertpage description
+  makexhtml "$scriptpath/temp/description.html" title_page
+  makenavpoint $nav "Title Page" "title_page.xhtml"
+  nav=$(( nav + 1 ))
+  echo "     <item href=\"Text/title_page.xhtml\" id=\"title_page.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+  echo "    <itemref idref=\"title_page.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
 else
- echo "Description page not found"
+  echo "Description page not found"
 fi
 
 convertpage $filename
@@ -179,42 +185,42 @@ csplit -sz -f "$filepath/review/OEBPS/Text/part" "$workingname.html" '/^<h1>/' {
 chnb="1"
 for i in "$filepath/review/OEBPS/Text"/part*
 do
- if [ $chnb -lt 10 ]; then
-  prefix="0"
- else
-  prefix=""
- fi
- j=chap$prefix$chnb
- makexhtml $i $j
- chnb=$(( chnb + 1 ))
- makenavpoint $nav "Chapter $nav" "$(basename "$j").xhtml"
- nav=$(( nav + 1 ))
- echo "     <item href=\"Text/$(basename "$j").xhtml\" id=\"$(basename "$j")\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
- echo "    <itemref idref=\"$(basename "$j")\"/>" >> "$filepath/review/OEBPS/content2.opf"
+  if [ $chnb -lt 10 ]; then
+    prefix="0"
+  else
+    prefix=""
+  fi
+  j=chap$prefix$chnb
+  makexhtml $i $j
+  chnb=$(( chnb + 1 ))
+  makenavpoint $nav "Chapter $nav" "$(basename "$j").xhtml"
+  nav=$(( nav + 1 ))
+  echo "     <item href=\"Text/$(basename "$j").xhtml\" id=\"$(basename "$j")\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+  echo "    <itemref idref=\"$(basename "$j")\"/>" >> "$filepath/review/OEBPS/content2.opf"
 done
 
 if [ -r $filepath/serie.$ext ]; then
- echo "Serie informations will be taken from $filepath/serie.$ext"
- convertpage serie
- makexhtml "$scriptpath/temp/serie.html" serie
- makenavpoint $nav "Serie" "serie.xhtml"
- nav=$(( nav + 1 ))
- echo "     <item href=\"Text/serie.xhtml\" id=\"serie.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
- echo "    <itemref idref=\"serie.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+  echo "Serie informations will be taken from $filepath/serie.$ext"
+  convertpage serie
+  makexhtml "$scriptpath/temp/serie.html" serie
+  makenavpoint $nav "Serie" "serie.xhtml"
+  nav=$(( nav + 1 ))
+  echo "     <item href=\"Text/serie.xhtml\" id=\"serie.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+  echo "    <itemref idref=\"serie.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
 else
- echo "Serie page not found"
+  echo "Serie page not found"
 fi
 
 if [ -r $filepath/contact.$ext ]; then
- echo "Contact informations will be taken from $filepath/contact.$ext"
- convertpage contact
- makexhtml "$scriptpath/temp/contact.html" contact
- makenavpoint $nav "About $author" "contact.xhtml"
- nav=$(( nav + 1 ))
- echo "     <item href=\"Text/contact.xhtml\" id=\"contact.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
- echo "    <itemref idref=\"contact.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+  echo "Contact informations will be taken from $filepath/contact.$ext"
+  convertpage contact
+  makexhtml "$scriptpath/temp/contact.html" contact
+  makenavpoint $nav "About $author" "contact.xhtml"
+  nav=$(( nav + 1 ))
+  echo "     <item href=\"Text/contact.xhtml\" id=\"contact.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
+  echo "    <itemref idref=\"contact.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
 else
- echo "Contact page not found"
+  echo "Contact page not found"
 fi
 
 # wrapping up
