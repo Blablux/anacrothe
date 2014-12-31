@@ -29,27 +29,29 @@ function convertpage()
 function makexhtml()
 {
   cat "$scriptpath/temp/header.txt" > "$filepath/review/OEBPS/Text/$2.xhtml"
-  cat $1 >> "$filepath/review/OEBPS/Text/$2.xhtml"
+  cat "$1" >> "$filepath/review/OEBPS/Text/$2.xhtml"
   echo "</body></html>" >> "$filepath/review/OEBPS/Text/$2.xhtml"
 }
 
 function makenavpoint()
 {
-  echo -e "    <navPoint id=\"navPoint-$1\" playOrder=\"$1\">" >> "$filepath/review/OEBPS/toc.ncx"
-  echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>" >> "$filepath/review/OEBPS/toc.ncx"
-  echo -e "     <content src=\"Text/$3\"/>\n    </navPoint>" >> "$filepath/review/OEBPS/toc.ncx"
+  { 
+    echo -e "    <navPoint id=\"navPoint-$1\" playOrder=\"$1\">"
+    echo -e "      <navLabel>\n        <text>$2</text>\n      </navLabel>"
+    echo -e "     <content src=\"Text/$3\"/>\n    </navPoint>" 
+  } >> "$filepath/review/OEBPS/toc.ncx"
 }
 
-scriptpath=`dirname $0`
+scriptpath=$(dirname "$0")
 nav=1
 # check if file exist
-if [ ! -z $1 ]; then
-  filepath=`dirname $1`
+if [ ! -z "$1" ]; then
+  filepath=$(dirname "$1")
   filename=$(basename "$1")
   ext="${filename##*.}"
   filename="${filename%.*}"
   workingname="$scriptpath"/temp/"$filename"
-  if [ ! -r $filepath/$filename.$ext ]; then
+  if [ ! -r "$filepath"/"$filename"."$ext" ]; then
     senderror "$filename.$ext can't be read!"
   fi
 else
@@ -62,7 +64,7 @@ if ! file --mime-type "$1" | grep -q text/plain$; then
   echo -n "Do you want to continue [y/n] ? " ; read textfile
   if [[ "$textfile" != [yY] ]]; then
     exit 1
-  elif [[ "$ext" != md && "$ext" != markdown && "$ext" != mdown && "$ext" != mkdn && "$ext" != mkd && "$ext" != mdwn && "$ext" != mdtxt && "$ext" != mdtext] ]]; then
+  elif [[ "$ext" != md && "$ext" != markdown && "$ext" != mdown && "$ext" != mkdn && "$ext" != mkd && "$ext" != mdwn && "$ext" != mdtxt && "$ext" != mdtext ]]; then
     echo "File doesn't use have a markdown extension."
     echo -n "Do you wish to continue? [y/n] ?" ; read markdown
     if [[ $markdown != [yY] ]]; then
@@ -96,14 +98,15 @@ if [ ! -r "$scriptpath/lang/sed_$lang.txt" ]; then
 fi
 
 # preparing headers
-cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
+#cat "$scriptpath/data/header.txt" | sed -e "s/\$title/$title/g" > "$scriptpath/temp/header.txt"
+sed -e "s/\$title/$title/g" "$scriptpath/data/header.txt" > "$scriptpath/temp/header.txt"
 
 # preparing cover
-if [ -r $filepath/cover.jpg ]; then
+if [ -r "$filepath"/cover.jpg ]; then
   cover_ext="jpg"
 fi
-if [ -r $filepath/cover.png ]; then
-  if [ -r $filepath/cover.jpg ]; then
+if [ -r "$filepath"/cover.png ]; then
+  if [ -r "$filepath"/cover.jpg ]; then
     senderror "Two covers were found!"
   else
     cover_ext="png"
@@ -112,28 +115,36 @@ fi
 
 if [ ! -z $cover_ext ]; then
   cover="    <meta name=\"cover\" content=\"cover\"\/>\n"
-  cover_opf="<meta name="cover" content="cover-image"/>"
+  cover_opf="<meta name=\"cover\" content=\"cover-image\"/>"
   echo "Cover will be taken from $filepath/cover.$cover_ext"
   cp "$filepath/cover.$cover_ext" "$filepath/review/OEBPS/Text/"
-  cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover_ext/$cover_ext/g" -e "s/\$title/$title/g" > "$filepath/review/OEBPS/Text/cover.xhtml"
+  #cat "$scriptpath/data/cover.txt" | sed -e "s/\$cover_ext/$cover_ext/g" -e "s/\$title/$title/g" > "$filepath/review/OEBPS/Text/cover.xhtml"
+  sed -e "s/\$cover_ext/$cover_ext/g" -e "s/\$title/$title/g" "$scriptpath/data/cover.txt" > "$filepath/review/OEBPS/Text/cover.xhtml"
 
-  cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
+  #cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
+  sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" "$scriptpath/data/toc.ncx" > "$filepath/review/OEBPS/toc.ncx"
   makenavpoint $nav "Cover" "cover.xhtml"
   nav=$(( nav + 1 ))
 
-  cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
-  echo "     <item href=\"Text/cover.xhtml\" id=\"cover.xhtml\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
-  echo "     <item href=\"Text/cover.$cover_ext\" id=\"cover-image\" media-type=\"image/$cover_ext\" />" >> "$filepath/review/OEBPS/content.opf"
-  echo "    <itemref idref=\"cover.xhtml\"/>" >> "$filepath/review/OEBPS/content2.opf"
+  #cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
+  sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" "$scriptpath/data/content.opf" > "$filepath/review/OEBPS/content.opf"
+
+  {
+    echo "     <item href=\"Text/cover.xhtml\" id=\"cover.xhtml\" media-type=\"application/xhtml+xml\" />"
+    echo "     <item href=\"Text/cover.$cover_ext\" id=\"cover-image\" media-type=\"image/$cover_ext\" />"
+    echo "    <itemref idref=\"cover.xhtml\"/>"
+  } >> "$filepath/review/OEBPS/content2.opf"
 
 else
   cover=""
-  cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
-  cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
+  #cat "$scriptpath/data/toc.ncx" | sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/toc.ncx"
+  #cat "$scriptpath/data/content.opf" | sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" > "$filepath/review/OEBPS/content.opf"
+  sed -e "s/\$cover/$cover/g" -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$uid/$uid/g" "$scriptpath/data/toc.ncx" > "$filepath/review/OEBPS/toc.ncx"
+  sed -e "s/\$title/$title/g" -e "s/\$author/$author/g" -e "s/\$publisher/$publisher/g" -e "s/\$lang/$lang/g"  -e "s/\$uid/$uid/g" "$scriptpath/data/content.opf" > "$filepath/review/OEBPS/content.opf"
 fi
 
 # working
-if [ -r $filepath/description.$ext ]; then
+if [ -r "$filepath"/description."$ext" ]; then
   echo "Description will be taken from $filepath/description.$ext"
   convertpage description
   makexhtml "$scriptpath/temp/description.html" title_page
@@ -145,7 +156,7 @@ else
   echo "Description page not found"
 fi
 
-convertpage $filename
+convertpage "$filename"
 
 echo "Do you want to replace horizontal rules with" ;
 echo -n "a single html entity? [y/n] " ; read replacehr
@@ -161,7 +172,7 @@ if [[ "$replacehr" == [yY] ]]; then
       senderror "$hr is not a valid html entity"
     fi
     hr="\\$hr"
-    sed -i "s/<hr>/\n<p class=\"hr\">$hr<\/p>\n/g" $workingname.html
+    sed -i "s/<hr>/\n<p class=\"hr\">$hr<\/p>\n/g" "$workingname".html
   ;;
   *)
     if [[ ! $hr =~ ^\& ]]; then
@@ -180,7 +191,7 @@ if [[ "$replacehr" == [yY] ]]; then
   esac
 fi
 
-csplit -sz -f "$filepath/review/OEBPS/Text/part" "$workingname.html" '/^<h1>/' {*}
+csplit -sz -f "$filepath/review/OEBPS/Text/part" "$workingname.html" '/^<h1>/' '{*}'
 
 chnb="1"
 for i in "$filepath/review/OEBPS/Text"/part*
@@ -191,15 +202,15 @@ do
     prefix=""
   fi
   j=chap$prefix$chnb
-  makexhtml $i $j
+  makexhtml "$i" "$j"
   chnb=$(( chnb + 1 ))
-  makenavpoint $nav "Chapter $nav" "$(basename "$j").xhtml"
+  makenavpoint "$nav" "Chapter $nav" "$(basename "$j").xhtml"
   nav=$(( nav + 1 ))
   echo "     <item href=\"Text/$(basename "$j").xhtml\" id=\"$(basename "$j")\" media-type=\"application/xhtml+xml\" />" >> "$filepath/review/OEBPS/content.opf"
   echo "    <itemref idref=\"$(basename "$j")\"/>" >> "$filepath/review/OEBPS/content2.opf"
 done
 
-if [ -r $filepath/serie.$ext ]; then
+if [ -r "$filepath"/serie."$ext" ]; then
   echo "Serie informations will be taken from $filepath/serie.$ext"
   convertpage serie
   makexhtml "$scriptpath/temp/serie.html" serie
@@ -211,7 +222,7 @@ else
   echo "Serie page not found"
 fi
 
-if [ -r $filepath/contact.$ext ]; then
+if [ -r "$filepath"/contact."$ext" ]; then
   echo "Contact informations will be taken from $filepath/contact.$ext"
   convertpage contact
   makexhtml "$scriptpath/temp/contact.html" contact
@@ -229,11 +240,11 @@ rm "$filepath/review/OEBPS/content2.opf"
 echo -e "  </spine>\n  <guide/>\n</package>" >> "$filepath/review/OEBPS/content.opf"
 echo -e "  </navMap>\n</ncx>" >> "$filepath/review/OEBPS/toc.ncx"
 rm "$filepath"/review/OEBPS/Text/part*
-rm -r $scriptpath/temp
+rm -r "$scriptpath"/temp
 cd "$filepath/review"
 zip -X -0 -q "$filepath/${title// }.epub.zip" mimetype
-zip -X -9 -r -q "$filepath/${title// }.epub.zip" * -x mimetype
+zip -X -9 -r -q "$filepath/${title// }.epub.zip" ./* -x mimetype
 mv "$filepath/${title// }.epub.zip" "$filepath/${title// }.epub"
 echo "$filepath/${title// }.epub created"
-rm -r $filepath/review
+rm -r "$filepath"/review
 
